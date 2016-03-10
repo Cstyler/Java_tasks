@@ -1,7 +1,7 @@
 import java.math.BigInteger;
 import java.util.Scanner;
 
-public class FastFib {
+public abstract class FastFib {
     public static void main(String[] args) {
         Scanner scn = new Scanner(System.in);
         System.out.println(calcFib(scn.nextInt()));
@@ -36,7 +36,6 @@ class Matrix {
                 for (int k = 0; k < size; k++) {
                     result[i][j] = result[i][j].add(a[i][k].multiply(b[k][j]));
                 }
-
             }
         }
         return result;
