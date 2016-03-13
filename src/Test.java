@@ -1,18 +1,21 @@
 /**
- * Created by khan on 10.03.16. Home_taks
+ * Created by khan on 13.03.16. Home_tasks
  */
 public class Test {
     public static void main(String[] args) {
-        StringBuilder b = new StringBuilder("asdfgh");
-        SuffixList suff = new SuffixList(b);
-        for (String s :
-                suff) {
-            System.out.println(s);
-        }
-        b.insert(1, 'x');
-        for (String s :
-                suff) {
-            System.out.println(s);
-        }
+        Element<Integer> a = new Element<>(0),
+                b = new Element<>(1),
+                c = new Element<>(2),
+                d = new Element<>(3),
+                e = new Element<>(4),
+                f = new Element<>(5);
+        a.union(b);
+        c.union(a);
+        c.union(d);
+        e.union(f);
+        System.out.println("" + a.x() + "=" + d.x() + ": " +
+                a.equivalent(d));
+        System.out.println("" + a.x() + "=" + f.x() + ": " +
+                a.equivalent(f));
     }
 }
