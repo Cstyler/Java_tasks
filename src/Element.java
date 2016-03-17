@@ -1,5 +1,5 @@
 /**
- * Created by khan on 10.03.16. MaxNum
+ * Created by khan on 10.03.16.
  */
 
 public class Element<T> {
