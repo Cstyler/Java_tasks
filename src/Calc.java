@@ -1,16 +1,21 @@
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.InputMismatchException;
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
 public class Calc {
     public static void main(String[] args) {
+        getResult();
+    }
+
+    private static void getResult() {
         Scanner scn = new Scanner(System.in);
         Lexer l = new Lexer(scn.nextLine());
         Parser p = new Parser(l.lex(), scn);
         try {
-            System.out.println(p.Parse());
-        } catch (Exception e) {
+            System.out.println(p.parse());
+        } catch (RuntimeException e) {
             System.out.println("error");
         }
     }
@@ -53,26 +58,24 @@ class Lexer {
                     digitFlag = false;
                 }
                 if (binaryOpPattern.matcher(c).matches()) {
+                    Token.TokenType type = null;
                     switch (c) {
                         case "+":
-                            tokenArrayList.add(new Token(Token.TokenType.PLUS, c));
+                            type = Token.TokenType.PLUS;
                             break;
                         case "-":
-                            tokenArrayList.add(new Token(Token.TokenType.MINUS, c));
+                            type = Token.TokenType.MINUS;
                             break;
                         case "*":
-                            tokenArrayList.add(new Token(Token.TokenType.MUL, c));
+                            type = Token.TokenType.MUL;
                             break;
                         case "/":
-                            tokenArrayList.add(new Token(Token.TokenType.DIV, c));
+                            type = Token.TokenType.DIV;
                             break;
                     }
+                    tokenArrayList.add(new Token(type, c));
                 } else if (bracketPattern.matcher(c).matches()) {
-                    if (c.equals(")")) {
-                        tokenArrayList.add(new Token(Token.TokenType.CLOSEBRACKET, c));
-                    } else {
-                        tokenArrayList.add(new Token(Token.TokenType.OPENBRACKET, c));
-                    }
+                    tokenArrayList.add(new Token(c.equals(")") ? Token.TokenType.CLOSEBRACKET : Token.TokenType.OPENBRACKET, c));
                 } else if (!whiteSpacePattern.matcher(c).matches()) {
                     throw new RuntimeException("Lexical Error");
                 }
@@ -100,95 +103,78 @@ class Parser {
         this.scanner = scanner;
     }
 
-    public int Parse() {
+    public int parse() {
         return E();
     }
 
     private int E() {
-        return T() + Ee();
+        return rightRecursionE(T());
     }
 
-    private int Ee() throws RuntimeException {
+    private int rightRecursionE(int t) {
         if (index >= tokens.size()) {
-            return 0;
+            return t;
         }
         Token.TokenType type = tokens.get(index++).getTokenType();
         if (type == Token.TokenType.PLUS) {
-            return T() + Ee(); //<E> ::= <T> <E’>. <E’> ::= + <T> <E’>
+            return rightRecursionE(t + T()); // <E> ::= <T> <E’>. <E’> ::= + <T> <E’>
         } else if (type == Token.TokenType.MINUS) {
-            return -T() + Ee(); // <E>  ::= <T> <E’>. <E’> ::= ... | - <T> <E’>
+            return rightRecursionE(t - T()); // <E>  ::= <T> <E’>. <E’> ::= ... | - <T> <E’>
         } else {
             if (type == Token.TokenType.NUMBER || type == Token.TokenType.IDENT) {
                 throw new RuntimeException("Missing operation between numbers");
             }
             index--;
-            return 0; // <E>  ::= <T> <E’>. <E’> ::= ... | .
+            return t; // <E>  ::= <T> <E’>. <E’> ::= ... | .
         }
     }
 
     private int T() {
-        ArrayList<Token> a = new ArrayList<>();
-        int f = F();
-        Tt(a);
-        System.out.println(a);
-        boolean mulFlag = false, divFlag = false;
-        for (Token t :
-                a) {
-            if (t.getTokenType() == Token.TokenType.MUL) {
-                mulFlag = true;
-            } else if (t.getTokenType() == Token.TokenType.DIV) {
-                divFlag = true;
-            }
-            if (mulFlag && t.getTokenType() == Token.TokenType.NUMBER) {
-                mulFlag = false;
-                f *= Integer.parseInt(t.string);
-            } else if (divFlag && t.getTokenType() == Token.TokenType.NUMBER) {
-                divFlag = false;
-                f /= Integer.parseInt(t.string);
-            }
-        }
-        return f;
+        return rightRecursionT(F());
     }
 
-    private void Tt(ArrayList<Token> a) {
-        if (index < tokens.size()) {
-            Token.TokenType type = tokens.get(index++).getTokenType();
-            if (type == Token.TokenType.MUL) {
-                a.add(new Token(Token.TokenType.MUL, "*"));
-                a.add(new Token(Token.TokenType.NUMBER, Integer.toString(F())));
-                Tt(a); // <T> ::= <F> <T’>. <T’> ::= * <F> <T’> | ...
-            } else if (type == Token.TokenType.DIV) {
-                a.add(new Token(Token.TokenType.DIV, "/"));
-                a.add(new Token(Token.TokenType.NUMBER, Integer.toString(F())));
-                Tt(a); // <T>  ::= <F> <T’>. <T’> ::= / <F> <T’>
-            } else {
-                index--; // <T> ::= <F> <T’>. <T’> ::= ... | .
-            }
+    private int rightRecursionT(int f) {
+        if (index >= tokens.size()) {
+            return f;
+        }
+        Token.TokenType type = tokens.get(index++).getTokenType();
+        if (type == Token.TokenType.MUL) {
+            return rightRecursionT(f * F()); // <T> ::= <F> <T’>. <T’> ::= * <F> <T’> | ...
+        } else if (type == Token.TokenType.DIV) {
+            return rightRecursionT(f / F()); // <T> ::= <F> <T’>. <T’> ::= ... | / <F> <T’> | ...
+        } else {
+            index--;
+            return f; // <T> ::= <F> <T’>. <T’> ::= ... | .
         }
     }
 
     private int F() {
         try {
             Token currentToken = tokens.get(index++);
-            Token.TokenType type = currentToken.getTokenType();
-            String currentString = currentToken.string;
-            if (type == Token.TokenType.NUMBER) {
+            Token.TokenType tokenType = currentToken.getTokenType();
+            String currentString = currentToken.getString();
+            if (tokenType == Token.TokenType.NUMBER) {
                 return Integer.parseInt(currentString); // <F> ::= number | ...
-            } else if (type == Token.TokenType.IDENT) {
-                if (identMap.containsKey(currentString)) {
-                    return identMap.get(currentString); // <F> ::= value | ...
+            } else if (tokenType == Token.TokenType.IDENT) {
+                Integer value = identMap.get(currentString);
+                if (value != null) {
+                    return value; // <F> ::= value | ...
                 } else {
-                    Integer currentInt = scanner.nextInt();
-                    identMap.put(currentString, currentInt);
-                    return currentInt; // <F> ::= value | ...
+                    try {
+                        value = scanner.nextInt();
+                    } catch (InputMismatchException e) {
+                        throw new RuntimeException("'Integer' expected, but 'String' found");
+                    }
+                    identMap.put(currentString, value);
+                    return value; // <F> ::= value | ...
                 }
-            } else if (type == Token.TokenType.MINUS) {
+            } else if (tokenType == Token.TokenType.MINUS) {
                 return -F(); // <F> ::= ... | -<F>.
-            } else if (type == Token.TokenType.OPENBRACKET) {
+            } else if (tokenType == Token.TokenType.OPENBRACKET) {
                 int eReturn = E();
                 try {
                     if (tokens.get(index++).getTokenType() != Token.TokenType.CLOSEBRACKET) {
-                        throw new RuntimeException("Bracket error, using '(' after (");
+                        throw new RuntimeException("Bracket error, using '(' after '('");
                     }
                 } catch (IndexOutOfBoundsException e) {
                     throw new RuntimeException("Bracket error, expected ) after (");
@@ -204,7 +190,7 @@ class Parser {
 }
 
 class Token {
-    public final String string;
+    private final String string;
     private final TokenType tokenType;
 
     public Token(TokenType tokenType, String string) {
@@ -214,6 +200,10 @@ class Token {
 
     public TokenType getTokenType() {
         return tokenType;
+    }
+
+    public String getString() {
+        return string;
     }
 
     @Override
