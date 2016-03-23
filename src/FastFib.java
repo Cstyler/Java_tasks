@@ -17,7 +17,7 @@ abstract class FastFib {
 class Matrix {
     private static final BigInteger[][] IDENTITY_MATRIX = {{BigInteger.ONE, BigInteger.ZERO}, {BigInteger.ZERO, BigInteger.ONE}};
 
-    public static BigInteger[][] powMatrix(BigInteger[][] matrix, int n) {
+    static BigInteger[][] powMatrix(BigInteger[][] matrix, int n) {
         if (n == 0) {
             return IDENTITY_MATRIX;
         } else if (n % 2 == 0) {

@@ -10,6 +10,7 @@ interface Hintable {
 
 class SparseSet<T extends Hintable> extends AbstractSet<T> {
     private final ArrayList<T> dense;
+    private int n;
 
     public SparseSet() {
         this.dense = new ArrayList<>();
@@ -18,13 +19,13 @@ class SparseSet<T extends Hintable> extends AbstractSet<T> {
     @Override
     public boolean contains(Object o) {
         //noinspection unchecked
-        return dense.size() != 0 && dense.get(((T) o).hint()) == o;
+        return n != 0 && dense.get(((T) o).hint()) == o;
     }
 
     @Override
     public boolean add(T t) {
         if (!contains(t)) {
-            t.setHint(dense.size());
+            t.setHint(n++);
             dense.add(t);
             return true;
         } else {
@@ -36,10 +37,9 @@ class SparseSet<T extends Hintable> extends AbstractSet<T> {
     public boolean remove(Object o) {
         @SuppressWarnings("unchecked") T t = (T) o;
         if (contains(t)) {
-            int last = dense.size() - 1;
+            int last = n-- - 1;
             dense.set(t.hint(), dense.get(last));
             dense.get(last).setHint(t.hint());
-            dense.remove(last);
             return true;
         } else {
             return false;
@@ -48,35 +48,33 @@ class SparseSet<T extends Hintable> extends AbstractSet<T> {
 
     @Override
     public void clear() {
-        dense.clear();
+        n = 0;
     }
 
     @Override
     public int size() {
-        return dense.size();
+        return n;
     }
 
     @Override
     public Iterator<T> iterator() {
-        return new SparseSetIterator();
-    }
+        return new Iterator<T>() {
+            private int i;
 
-    private class SparseSetIterator implements Iterator<T> {
-        private int i;
+            @Override
+            public boolean hasNext() {
+                return i < n;
+            }
 
-        @Override
-        public boolean hasNext() {
-            return i < dense.size();
-        }
+            @Override
+            public T next() {
+                return dense.get(i++);
+            }
 
-        @Override
-        public T next() {
-            return dense.get(i++);
-        }
-
-        @Override
-        public void remove() {
-            SparseSet.this.remove(dense.get(i - 1));
-        }
+            @Override
+            public void remove() {
+                SparseSet.this.remove(dense.get(i - 1));
+            }
+        };
     }
 }
