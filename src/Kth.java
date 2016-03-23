@@ -1,6 +1,6 @@
 import java.util.Scanner;
 
-public abstract class Kth {
+abstract class Kth {
     public static void main(String[] args) {
         Scanner in = new Scanner(System.in);
         long k = in.nextLong();

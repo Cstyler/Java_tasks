@@ -2,9 +2,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.InputMismatchException;
 import java.util.Scanner;
-import java.util.regex.Pattern;
 
-public class Calc {
+class Calc {
     public static void main(String[] args) {
         getResult();
     }
@@ -23,14 +22,8 @@ public class Calc {
 
 class Lexer {
     private final String string;
-    private final Pattern binaryOpPattern, identPattern, whiteSpacePattern, bracketPattern, digitPattern;
 
     public Lexer(String string) {
-        binaryOpPattern = Pattern.compile("[+-/*]");
-        identPattern = Pattern.compile("[a-zA-Z]");
-        whiteSpacePattern = Pattern.compile("[ \t\n]");
-        bracketPattern = Pattern.compile("[()]");
-        digitPattern = Pattern.compile("[0-9]");
         this.string = string;
     }
 
@@ -39,11 +32,12 @@ class Lexer {
         ArrayList<Token> tokenArrayList = new ArrayList<>();
         boolean digitFlag = false, identFlag = false;
         for (int i = 0; i < string.length(); i++) {
-            String c = Character.toString(string.charAt(i));
-            if (digitPattern.matcher(c).matches()) {
+            Character c = string.charAt(i);
+            String s = Character.toString(c);
+            if (Character.isDigit(c)) {
                 digitFlag = !identFlag;
                 stringBuilder.append(c);
-            } else if (identPattern.matcher(c).matches()) {
+            } else if (Character.isAlphabetic(c)) {
                 identFlag = true;
                 digitFlag = false;
                 stringBuilder.append(c);
@@ -57,9 +51,9 @@ class Lexer {
                     stringBuilder.delete(0, stringBuilder.length());
                     digitFlag = false;
                 }
-                if (binaryOpPattern.matcher(c).matches()) {
+                if (s.matches("[+-/*()]")) {
                     Token.TokenType type = null;
-                    switch (c) {
+                    switch (s) {
                         case "+":
                             type = Token.TokenType.PLUS;
                             break;
@@ -72,11 +66,15 @@ class Lexer {
                         case "/":
                             type = Token.TokenType.DIV;
                             break;
+                        case "(":
+                            type = Token.TokenType.OPENBRACKET;
+                            break;
+                        case ")":
+                            type = Token.TokenType.CLOSEBRACKET;
+                            break;
                     }
-                    tokenArrayList.add(new Token(type, c));
-                } else if (bracketPattern.matcher(c).matches()) {
-                    tokenArrayList.add(new Token(c.equals(")") ? Token.TokenType.CLOSEBRACKET : Token.TokenType.OPENBRACKET, c));
-                } else if (!whiteSpacePattern.matcher(c).matches()) {
+                    tokenArrayList.add(new Token(type, s));
+                } else if (!Character.isWhitespace(c)) {
                     throw new RuntimeException("Lexical Error");
                 }
             }

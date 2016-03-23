@@ -1,7 +1,7 @@
 import java.math.BigInteger;
 import java.util.Scanner;
 
-public abstract class FastFib {
+abstract class FastFib {
     public static void main(String[] args) {
         Scanner scn = new Scanner(System.in);
         System.out.println(calcFib(scn.nextInt()));

@@ -2,7 +2,7 @@
  * Created by khan on 10.03.16.
  */
 
-public class Element<T> {
+class Element<T> {
 
     private final T x;
     private Element<T> parent;

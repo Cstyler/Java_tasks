@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 import java.util.Scanner;
 
-public class Econom {
+class Econom {
     private static ArrayList<String> stack;
 
     public static void main(String[] args) {
